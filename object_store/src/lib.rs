@@ -1273,6 +1273,15 @@ pub enum Error {
     #[snafu(display("Operation not yet implemented."))]
     NotImplemented,
 
+    #[snafu(display(
+        "Caller is not authenticated or lacks the required permissions to perform the operation."
+    ))]
+    PermissionDenied {
+        store: &'static str,
+        path: String,
+        source: Box<dyn std::error::Error + Send + Sync + 'static>,
+    },
+
     #[snafu(display("Configuration key: '{}' is not valid for store '{}'.", key, store))]
     UnknownConfigurationKey { store: &'static str, key: String },
 }
@@ -1281,6 +1290,7 @@ impl From<Error> for std::io::Error {
     fn from(e: Error) -> Self {
         let kind = match &e {
             Error::NotFound { .. } => std::io::ErrorKind::NotFound,
+            Error::PermissionDenied { .. } => std::io::ErrorKind::PermissionDenied,
             _ => std::io::ErrorKind::Other,
         };
         Self::new(kind, e)
